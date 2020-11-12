@@ -37,15 +37,3 @@ variable "apply" {
   description = "Flag indicating that the module should be applied"
   default     = true
 }
-
-variable "exists" {
-  type        = bool
-  description = "Flag indicating that the VPC already exists and we should just look up the values"
-  default     = true
-}
-
-variable "gitops_dir" {
-  type        = string
-  description = "Directory where the gitops repo content should be written"
-  default     = ""
-}
