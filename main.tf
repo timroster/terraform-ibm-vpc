@@ -9,8 +9,8 @@ provider "local" {
 }
 
 locals {
-  vpc_zone_names = var.vpc_zone_names
-  prefix_name    = var.prefix_name
+  vpc_zone_names = var.zone_names
+  prefix_name    = var.name_prefix
   vpc_name       = "${local.prefix_name}-vpc"
   vpc_id         = var.apply ? ibm_is_vpc[0].id : ""
   subnet_ids     = var.apply ? ibm_is_subnet.vpc_subnet[*].id : []

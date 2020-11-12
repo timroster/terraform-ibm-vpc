@@ -9,7 +9,7 @@ variable "region" {
   description = "The IBM Cloud region where the cluster will be/has been installed."
 }
 
-variable "prefix_name" {
+variable "name_prefix" {
   type        = string
   description = "The name of the vpc resource"
 }
@@ -20,7 +20,7 @@ variable "ibmcloud_api_key" {
 }
 
 # VPC Variables
-variable "vpc_zone_names" {
+variable "zone_names" {
   type        = list(string)
   description = "List of vpc zones"
   default     = []
