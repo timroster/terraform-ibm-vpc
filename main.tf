@@ -14,6 +14,9 @@ locals {
   vpc_name       = "${local.prefix_name}-vpc"
   vpc_id         = var.apply ? ibm_is_vpc.vpc[0].id : ""
   subnet_ids     = var.apply ? ibm_is_subnet.vpc_subnet[*].id : []
+  gateway_ids    = var.apply && var.public_gateway ? ibm_is_public_gateway.vpc_gateway[*].id : [ for val in local.vpc_zone_names: "" ]
+  security_group = var.apply ? ibm_is_vpc.vpc[0].default_security_group : ""
+  ipv4_cidr_blocks = var.apply ? ibm_is_subnet.vpc_subnet[*].ipv4_cidr_block : []
 }
 
 data "ibm_resource_group" "resource_group" {
@@ -31,7 +34,7 @@ resource "ibm_is_public_gateway" "vpc_gateway" {
   count = var.apply && var.public_gateway ? length(local.vpc_zone_names) : 0
 
   name           = "${local.prefix_name}-gateway-${format("%02s", count.index)}"
-  vpc            = ibm_is_vpc.vpc[0].id
+  vpc            = local.vpc_id
   zone           = local.vpc_zone_names[count.index]
   resource_group = data.ibm_resource_group.resource_group.id
 
@@ -46,8 +49,8 @@ resource "ibm_is_subnet" "vpc_subnet" {
 
   name                     = "${local.prefix_name}-subnet-${format("%02s", count.index)}"
   zone                     = local.vpc_zone_names[count.index]
-  vpc                      = ibm_is_vpc.vpc[0].id
-  public_gateway           = var.public_gateway ? ibm_is_public_gateway.vpc_gateway[count.index].id : ""
+  vpc                      = local.vpc_id
+  public_gateway           = local.gateway_ids[count.index]
   total_ipv4_address_count = 256
   resource_group           = data.ibm_resource_group.resource_group.id
 }
@@ -55,9 +58,9 @@ resource "ibm_is_subnet" "vpc_subnet" {
 resource "ibm_is_security_group_rule" "vpc_security_group_rule_tcp_k8s" {
   count     = var.apply ? length(local.vpc_zone_names) : 0
 
-  group     = ibm_is_vpc.vpc[0].default_security_group
+  group     = local.security_group
   direction = "inbound"
-  remote    = ibm_is_subnet.vpc_subnet[count.index].ipv4_cidr_block
+  remote    = local.ipv4_cidr_blocks[count.index]
 
   tcp {
     port_min = 30000
