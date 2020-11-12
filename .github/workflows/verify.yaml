@@ -80,6 +80,7 @@ jobs:
       # Test destroy
       - name: Validate destroy ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
         run: |
+          cd /tmp/workspace
           ./validate-notdeploy.sh ${TF_VAR_name_prefix} ${TF_VAR_vpc_public_gateway}
 
   release:
