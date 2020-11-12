@@ -2,53 +2,41 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0"); pwd -P)
 
-export KUBECONFIG="${SCRIPT_DIR}/.kube/config"
+PREFIX_NAME="$1"
+PUBLIC_GATEWAY="$2"
 
-CLUSTER_TYPE="$1"
-NAMESPACE="$2"
-NAME="$3"
-
-if [[ -z "${NAME}" ]]; then
-  NAME=$(echo "${NAMESPACE}" | sed "s/tools-//")
-fi
-
-echo "Verifying resources in ${NAMESPACE} namespace for module ${NAME}"
-
-PODS=$(kubectl get -n "${NAMESPACE}" pods -o jsonpath='{range .items[*]}{.status.phase}{": "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' | grep -v "Running" | grep -v "Succeeded")
-POD_STATUSES=$(echo "${PODS}" | sed -E "s/(.*):.*/\1/g")
-if [[ -n "${POD_STATUSES}" ]]; then
-  echo "  Pods have non-success statuses: ${PODS}"
-  exit 1
-fi
+VPC_NAME="${PREFIX_NAME}-vpc"
 
 set -e
 
-if [[ "${CLUSTER_TYPE}" == "kubernetes" ]] || [[ "${CLUSTER_TYPE}" =~ iks.* ]]; then
-  ENDPOINTS=$(kubectl get ingress -n "${NAMESPACE}" -o jsonpath='{range .items[*]}{range .spec.rules[*]}{"https://"}{.host}{"\n"}{end}{end}')
-else
-  ENDPOINTS=$(kubectl get route -n "${NAMESPACE}" -o jsonpath='{range .items[*]}{"https://"}{.spec.host}{.spec.path}{"\n"}{end}')
+VPC_ID=$(ibmcloud is vpcs | grep "${VPC_NAME}" | sed -E "s/^([A-Za-z0-9-]+).*/\1/g")
+
+if [[ -z "${VPC_ID}" ]]; then
+  echo "VPC id not found: ${VPC_NAME}"
+  exit 1
 fi
 
-echo "Validating endpoints:\n${ENDPOINTS}"
+ibmcloud is vpc "${VPC_ID}"
 
-echo "${ENDPOINTS}" | while read endpoint; do
-  if [[ -n "${endpoint}" ]]; then
-    ${SCRIPT_DIR}/waitForEndpoint.sh "${endpoint}" 10 10
+SUBNETS=$(ibmcloud is subnets | grep "${VPC_NAME}")
+
+if [[ -z "${SUBNETS}" ]]; then
+  echo "Subnets not found: ${VPC_NAME}"
+  exit 1
+fi
+
+if [[ "${PUBLIC_GATEWAY}" == "true" ]]; then
+  PGS=$(ibmcloud is pubgws | grep "${VPC_NAME}")
+
+  if [[ -z "${PGS}" ]]; then
+    echo "Public gateways not found: ${VPC_NAME}"
+    exit 1
   fi
-done
+else
+  PGS=$(ibmcloud is pubgws | grep "${VPC_NAME}")
 
-CONFIG_URLS=$(kubectl get configmap -n "${NAMESPACE}" -l grouping=garage-cloud-native-toolkit -l app.kubernetes.io/component=tools -o json | jq '.items[].data | to_entries | select(.[].key | endswith("_URL")) | .[].value' | sed "s/\"//g")
-
-echo "${CONFIG_URLS}" | while read url; do
-  if [[ -n "${url}" ]]; then
-    ${SCRIPT_DIR}/waitForEndpoint.sh "${url}" 10 10
-  fi
-done
-
-if [[ "${CLUSTER_TYPE}" == "ocp4" ]]; then
-  echo "Validating consolelink"
-  if [[ $(kubectl get consolelink "toolkit-${NAME}" | wc -l) -eq 0 ]]; then
-    echo "   ConsoleLink not found"
+  if [[ -n "${PGS}" ]]; then
+    echo "Public gateways found: ${VPC_NAME}"
     exit 1
   fi
 fi

@@ -14,25 +14,26 @@ jobs:
     # The type of runner that the job will run on
     if: "!contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
-    container: ibmgaragecloud/cli-tools:0.6.0-lite
+    container: ibmgaragecloud/cli-tools:0.8.0-lite
 
     strategy:
       matrix:
-        platform: [ocp4_vpc, ocp44_vpc]
-    #      max-parallel: 1
+        prefix-name: [garage-module-test]
+        apply: [true, false]
+        public-gateway: [true, false]
+      max-parallel: 1
       fail-fast: false
 
     env:
       HOME: /home/devops
-      NAMESPACE: ${{ secrets.NAMESPACE }}
-      TF_VAR_tools_namespace: ${{ secrets.NAMESPACE }}
       TF_VAR_ibmcloud_api_key: ${{ secrets.IBMCLOUD_API_KEY }}
       IBMCLOUD_API_KEY: ${{ secrets.IBMCLOUD_API_KEY }}
       TF_VAR_resource_group_name: ${{ secrets.TEST_RESOURCE_GROUP }}
       TF_VAR_region: ${{ secrets.TEST_REGION }}
-      TF_VAR_cluster_name: ${{ secrets[format('TEST_CLUSTER_{0}', matrix.platform)] }}
-      TF_VAR_cluster_type: ${{ matrix.platform }}
-      TF_VAR_vpc_cluster: ${{ endswith(matrix.platform, 'vpc') }}
+      TF_VAR_name_prefix: ${{ matrix.prefix-name }}-${{ matrix.public-gateway }}
+      TF_VAR_vpc_zone_names: [${{ secrets.TEST_REGION }}-1, ${{ secrets.TEST_REGION }}-2, ${{ secrets.TEST_REGION }}-3]
+      TF_VAR_vpc_apply: ${{ matrix.apply }}
+      TF_VAR_vpc_public_gateway: ${{ matrix.public-gateway }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -40,15 +41,11 @@ jobs:
         run: |
           echo "Github sha: ${{ github.sha }}"
           echo "Github ref: ${{ github.ref }}"
-          if [ -z "${NAMESPACE}" ]; then
-            echo "The NAMESPACE secret has not been set within the Git repo"
-            exit 1
-          fi
 
       - name: Checkout
         uses: actions/checkout@v1
 
-      # Setups up the task
+      # Sets up the task
       - name: Setup ${{ matrix.platform }}
         run: |
           ls -lA
@@ -67,7 +64,7 @@ jobs:
       - name: Validate deploy ${{ matrix.platform }}
         run: |
           cd /tmp/workspace
-          ./validate-deploy.sh ${{ matrix.platform }} ${{ env.NAMESPACE }}
+          ./validate-deploy.sh ${{ matrix.prefix-name }}-${{ matrix.public-gateway }} ${{ matrix.public-gateway }}
 
       # Destroy
       - name: Destroy ${{ matrix.platform }}
@@ -76,17 +73,9 @@ jobs:
           ./destroy.sh
 
       # Test destroy
-      - name: Validate destroy ${{ matrix.platform }}
-        run: |
-          cd /tmp/workspace
-          ./capture-cluster-state.sh ${{ matrix.platform }} $PWD/cluster-state/before $PWD/cluster-state/after
-          if diff -q $PWD/cluster-state/before $PWD/cluster-state/after 1> /dev/null; then
-            echo "Destroy completed successfully"
-          else
-            echo "Resources don't match"
-            diff $PWD/cluster-state/before $PWD/cluster-state/after
-            exit 1
-          fi
+      #- name: Validate destroy ${{ matrix.platform }}
+      #  run: |
+      #    ./validate-destroy.sh ${{ matrix.prefix-name }}-${{ matrix.public-gateway }} ${{ matrix.public-gateway }}
 
   release:
     #    if: ${{ github.event_name == 'push' }}

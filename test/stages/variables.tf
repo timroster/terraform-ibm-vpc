@@ -48,3 +48,20 @@ variable "vpc_cluster" {
   description = "Flag indicating that this is a vpc cluster"
   default     = false
 }
+
+variable "vpc_apply" {
+  type        = string
+  default     = "true"
+}
+
+variable "vpc_zone_names" {
+  type        = list(string)
+  description = "List of vpc zones"
+  default     = []
+}
+
+variable "vpc_public_gateway" {
+  type        = string
+  description = "Flag indicating the public gateway should be created"
+  default     = "true"
+}
