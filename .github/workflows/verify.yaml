@@ -30,8 +30,8 @@ jobs:
       IBMCLOUD_API_KEY: ${{ secrets.IBMCLOUD_API_KEY }}
       TF_VAR_resource_group_name: ${{ secrets.TEST_RESOURCE_GROUP }}
       TF_VAR_region: ${{ secrets.TEST_REGION }}
-      TF_VAR_name_prefix: ${{ matrix.prefix-name }}-${{ matrix.public-gateway }}
-      TF_VAR_vpc_zone_names: [${{ secrets.TEST_REGION }}-1, ${{ secrets.TEST_REGION }}-2, ${{ secrets.TEST_REGION }}-3]
+      TF_VAR_name_prefix: ${{ format('{0}-{1}', matrix.prefix-name, matrix.public-gateway) }}
+      TF_VAR_vpc_zone_names: ${{ format('[{0}-1, {0}-2, {0}-3]', secrets.TEST_REGION) }}
       TF_VAR_vpc_apply: ${{ matrix.apply }}
       TF_VAR_vpc_public_gateway: ${{ matrix.public-gateway }}
 
