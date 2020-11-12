@@ -21,7 +21,7 @@ jobs:
         prefix-name: [garage-module-test]
         apply: [true, false]
         public-gateway: [true, false]
-      max-parallel: 1
+      #max-parallel: 1
       fail-fast: true
 
     env:

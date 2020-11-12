@@ -9,8 +9,7 @@ VPC_NAME="${PREFIX_NAME}-vpc"
 
 ibmcloud login -r "${TF_VAR_region}" -g "${TF_VAR_resource_group_name}" --apikey "${TF_VAR_ibmcloud_api_key}"
 
-set -e
-
+echo "Retrieving VPC_ID for name: ${VPC_NAME}"
 VPC_ID=$(ibmcloud is vpcs | grep "${VPC_NAME}" | sed -E "s/^([A-Za-z0-9-]+).*/\1/g")
 
 if [[ -z "${VPC_ID}" ]]; then
@@ -18,8 +17,13 @@ if [[ -z "${VPC_ID}" ]]; then
   exit 1
 fi
 
-ibmcloud is vpc "${VPC_ID}"
+echo "Retrieving VPC info for id: ${VPC_ID}"
+if ! ibmcloud is vpc "${VPC_ID}"; then
+  echo "Unable to find vpc for id: ${VPC_ID}"
+  exit 1
+fi
 
+echo "Retrieving VPC subnets for VPC: ${VPC_NAME}"
 SUBNETS=$(ibmcloud is subnets | grep "${VPC_NAME}")
 
 if [[ -z "${SUBNETS}" ]]; then
@@ -27,20 +31,16 @@ if [[ -z "${SUBNETS}" ]]; then
   exit 1
 fi
 
-if [[ "${PUBLIC_GATEWAY}" == "true" ]]; then
-  PGS=$(ibmcloud is pubgws | grep "${VPC_NAME}")
+echo "Retrieving public gateways for VPC: ${VPC_NAME}"
+ibmcloud is pubgws | grep "${VPC_NAME}"
+PGS=$(ibmcloud is pubgws | grep "${VPC_NAME}")
 
-  if [[ -z "${PGS}" ]]; then
-    echo "Public gateways not found: ${VPC_NAME}"
-    exit 1
-  fi
-else
-  PGS=$(ibmcloud is pubgws | grep "${VPC_NAME}")
-
-  if [[ -n "${PGS}" ]]; then
-    echo "Public gateways found: ${VPC_NAME}"
-    exit 1
-  fi
+if [[ "${PUBLIC_GATEWAY}" == "true" ]] && [[ -z "${PGS}" ]]; then
+  echo "Public gateways not found: ${VPC_NAME}"
+  exit 1
+elif [[ "${PUBLIC_GATEWAY}" == "false" ]] && [[ -n "${PGS}" ]]; then
+  echo "Public gateways found: ${VPC_NAME}"
+  exit 1
 fi
 
 exit 0
