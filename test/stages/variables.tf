@@ -27,9 +27,9 @@ variable "vpc_apply" {
 }
 
 variable "vpc_zone_names" {
-  type        = list(string)
-  description = "List of vpc zones"
-  default     = []
+  type        = string
+  description = "Comma-separated list of vpc zones"
+  default     = ""
 }
 
 variable "vpc_public_gateway" {
