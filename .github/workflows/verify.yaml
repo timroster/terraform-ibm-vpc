@@ -22,7 +22,7 @@ jobs:
         apply: [true, false]
         public-gateway: [true, false]
       max-parallel: 1
-      fail-fast: false
+      fail-fast: true
 
     env:
       HOME: /home/devops
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v1
 
       # Sets up the task
-      - name: Setup ${{ matrix.platform }}
+      - name: Setup ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
         run: |
           ls -lA
           mkdir -p /tmp/workspace/module
@@ -55,27 +55,32 @@ jobs:
           cp -R . /tmp/workspace/module
 
       # Deploy
-      - name: Deploy ${{ matrix.platform }}
+      - name: Deploy ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
         run: |
           cd /tmp/workspace
           ./apply.sh
 
       # Test deploy
-      - name: Validate deploy ${{ matrix.platform }}
+      - name: Validate deploy ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
         run: |
           cd /tmp/workspace
-          ./validate-deploy.sh ${{ matrix.prefix-name }}-${{ matrix.public-gateway }} ${{ matrix.public-gateway }}
+          if [[ "${TF_VAR_vpc_apply}" == "true" ]]; then
+            ./validate-deploy.sh ${TF_VAR_name_prefix} ${TF_VAR_vpc_public_gateway}
+          else
+            ./validate-notdeploy.sh ${TF_VAR_name_prefix} ${TF_VAR_vpc_public_gateway}
+          fi
 
       # Destroy
-      - name: Destroy ${{ matrix.platform }}
+      - name: Destroy ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
+        if: ${{ always() }}
         run: |
           cd /tmp/workspace
           ./destroy.sh
 
       # Test destroy
-      #- name: Validate destroy ${{ matrix.platform }}
-      #  run: |
-      #    ./validate-destroy.sh ${{ matrix.prefix-name }}-${{ matrix.public-gateway }} ${{ matrix.public-gateway }}
+      - name: Validate destroy ${{ format('{0}-{1}-{2}', matrix.prefix-name, matrix.apply, matrix.public-gateway) }}
+        run: |
+          ./validate-notdeploy.sh ${TF_VAR_name_prefix} ${TF_VAR_vpc_public_gateway}
 
   release:
     #    if: ${{ github.event_name == 'push' }}

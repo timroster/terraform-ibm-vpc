@@ -9,13 +9,13 @@ provider "local" {
 }
 
 locals {
-  vpc_zone_names = var.zone_names
-  prefix_name    = var.name_prefix
-  vpc_name       = "${local.prefix_name}-vpc"
-  vpc_id         = var.apply ? ibm_is_vpc.vpc[0].id : ""
-  subnet_ids     = var.apply ? ibm_is_subnet.vpc_subnet[*].id : []
-  gateway_ids    = var.apply && var.public_gateway ? ibm_is_public_gateway.vpc_gateway[*].id : [ for val in local.vpc_zone_names: "" ]
-  security_group = var.apply ? ibm_is_vpc.vpc[0].default_security_group : ""
+  vpc_zone_names   = var.zone_names
+  prefix_name      = var.name_prefix
+  vpc_name         = "${local.prefix_name}-vpc"
+  vpc_id           = var.apply ? ibm_is_vpc.vpc[0].id : ""
+  subnet_ids       = var.apply ? ibm_is_subnet.vpc_subnet[*].id : []
+  gateway_ids      = var.apply && var.public_gateway ? ibm_is_public_gateway.vpc_gateway[*].id : [ for val in local.vpc_zone_names: "" ]
+  security_group   = var.apply ? ibm_is_vpc.vpc[0].default_security_group : ""
   ipv4_cidr_blocks = var.apply ? ibm_is_subnet.vpc_subnet[*].ipv4_cidr_block : []
 }
 
