@@ -2,14 +2,27 @@
 
 SCRIPT_DIR=$(cd $(dirname "$0"); pwd -P)
 
-exit 0
+echo "terraform.tfvars"
+cat terraform.tfvars
 
-PREFIX_NAME="$1"
-PUBLIC_GATEWAY="$2"
+PREFIX_NAME=$(cat terraform.tfvars | grep name_prefix | sed "s/name_prefix=//g" | sed 's/"//g' | sed "s/_/-/g")
+PUBLIC_GATEWAY=$(cat terraform.tfvars | grep vpc_public_gateway | sed "s/vpc_public_gateway=//g" | sed 's/"//g')
+REGION=$(cat terraform.tfvars | grep -E "^region" | sed "s/region=//g" | sed 's/"//g')
+RESOURCE_GROUP_NAME=$(cat terraform.tfvars | grep resource_group_name | sed "s/resource_group_name=//g" | sed 's/"//g')
+
+echo "PREFIX_NAME: ${PREFIX_NAME}"
+echo "PUBLIC_GATEWAY: ${PUBLIC_GATEWAY}"
+echo "REGION: ${REGION}"
+echo "RESOURCE_GROUP_NAME: ${RESOURCE_GROUP_NAME}"
+echo "IBMCLOUD_API_KEY: ${IBMCLOUD_API_KEY}"
+
+if [[ -z "${PUBLIC_GATEWAY}" ]]; then
+  PUBLIC_GATEWAY="false"
+fi
 
 VPC_NAME="${PREFIX_NAME}-vpc"
 
-ibmcloud login -r "${TF_VAR_region}" -g "${TF_VAR_resource_group_name}" --apikey "${TF_VAR_ibmcloud_api_key}"
+ibmcloud login -r "${REGION}" -g "${RESOURCE_GROUP_NAME}" --apikey "${IBMCLOUD_API_KEY}"
 
 echo "Retrieving VPC_ID for name: ${VPC_NAME}"
 VPC_ID=$(ibmcloud is vpcs | grep "${VPC_NAME}" | sed -E "s/^([A-Za-z0-9-]+).*/\1/g")
