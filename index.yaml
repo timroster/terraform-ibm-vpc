@@ -45,6 +45,57 @@ versions:
         description: Flag indicating that a public gateway should be created
         default: true
         optional: true
+    version: v1.2.0
+    outputs:
+      - name: name
+        description: The name of the vpc instance
+      - name: id
+        description: The id of the vpc instance
+      - name: subnet_count
+        description: The number of subnets for the vpc
+      - name: zone_names
+        description: The list of zone names that into which subnets were created
+      - name: subnet_ids
+        description: The list of subnet ids
+  - platforms: []
+    dependencies: []
+    variables:
+      - name: resource_group_name
+        scope: global
+        type: string
+        description: The name of the IBM Cloud resource group where the cluster will be created/can be found.
+      - name: region
+        scope: global
+        type: string
+        description: The IBM Cloud region where the cluster will be/has been installed.
+      - name: name
+        scope: ignore
+        type: string
+        description: The name of the vpc instance
+        default: ""
+        optional: true
+      - name: name_prefix
+        scope: global
+        type: string
+        description: The name of the vpc resource
+        default: ""
+        optional: true
+      - name: ibmcloud_api_key
+        scope: global
+        type: string
+        description: The IBM Cloud api token
+      - name: subnet_count
+        scope: module
+        type: number
+        description: Number of subnets for region
+        default: 1
+        optional: true
+      - name: public_gateway
+        scope: module
+        type: bool
+        description: Flag indicating that a public gateway should be created
+        default: true
+        optional: true
     version: v1.1.1
     outputs:
       - name: name
