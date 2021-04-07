@@ -1,8 +1,8 @@
 
 locals {
   zone_count        = 3
-  zone_ids          = range(var.subnet_count)
-  vpc_zone_names    = [ for index in local.zone_ids: "${var.region}-${(index % local.zone_count) + 1}" ]
+  subnet_count      = length(var.subnets) > 0 ? length(var.subnets) : var.subnet_count
+  vpc_zone_names    = [ for index in range(local.subnet_count): "${var.region}-${(index % local.zone_count) + 1}" ]
   prefix_name       = var.name_prefix != "" ? var.name_prefix : var.resource_group_name
   vpc_name          = lower(replace(var.name != "" ? var.name : "${local.prefix_name}-vpc", "_", "-"))
   vpc_id            = ibm_is_vpc.vpc.id
@@ -10,11 +10,28 @@ locals {
   gateway_ids       = var.public_gateway ? ibm_is_public_gateway.vpc_gateway[*].id : [ for val in range(local.zone_count): "" ]
   security_group_id = ibm_is_vpc.vpc.default_security_group
   ipv4_cidr_blocks  = ibm_is_subnet.vpc_subnet[*].ipv4_cidr_block
+  distinct_subnet_labels = distinct([ for val in var.subnets: val.label ])
+  # creates an intermediate object where the key is the label and the value is an array of labels, one for each appearance
+  # e.g. [{label = "basic"}, {label = "basic"}, {label = "test"}] would yield {basic = ["basic", "basic"], test = ["test"]}
+  subnet_labels_tmp = { for subnet in var.subnets: subnet.label => subnet.label... }
+  # creates an object where the key is the label and the value is number of times the label appears in the original list
+  # e.g. {basic = ["basic", "basic"], test = ["test"]} would yield {basic = 2, test = 1}
+  subnet_label_counts = length(var.subnets) > 0 ? [ for val in local.distinct_subnet_labels:
+        {
+          label = val
+          count = length(local.subnet_labels_tmp[val])
+        } ] : [ {
+          label = "default"
+          count = local.subnet_count
+      } ]
 }
 
 resource null_resource print_names {
   provisioner "local-exec" {
     command = "echo 'Resource group: ${var.resource_group_name}'"
+  }
+  provisioner "local-exec" {
+    command = "echo 'Subnets: ${jsonencode(local.subnet_labels_tmp)}'"
   }
 }
 
@@ -31,7 +48,7 @@ resource ibm_is_vpc vpc {
 }
 
 resource ibm_is_public_gateway vpc_gateway {
-  count = var.public_gateway ? min(local.zone_count, var.subnet_count) : 0
+  count = var.public_gateway ? min(local.zone_count, local.subnet_count) : 0
 
   name           = "${local.vpc_name}-gateway-${format("%02s", count.index)}"
   vpc            = local.vpc_id
@@ -66,7 +83,7 @@ resource ibm_is_network_acl network_acl {
 }
 
 resource ibm_is_subnet vpc_subnet {
-  count                    = var.subnet_count
+  count                    = local.subnet_count
 
   name                     = "${local.vpc_name}-subnet-${format("%02s", count.index)}"
   zone                     = local.vpc_zone_names[count.index]
@@ -78,7 +95,7 @@ resource ibm_is_subnet vpc_subnet {
 }
 
 resource ibm_is_security_group_rule rule_tcp_k8s {
-  count     = var.subnet_count
+  count     = local.subnet_count
 
   group     = local.security_group_id
   direction = "inbound"

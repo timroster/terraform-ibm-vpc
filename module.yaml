@@ -25,6 +25,8 @@ versions:
     - name: ibmcloud_api_key
       scope: global
     - name: subnet_count
+      scope: ignore
+    - name: subnets
       scope: module
     - name: public_gateway
       scope: module

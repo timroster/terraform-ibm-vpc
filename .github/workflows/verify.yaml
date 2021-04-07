@@ -17,8 +17,9 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ocp4_latest]
-    #      max-parallel: 1
+        platform:
+          - vpc_count
+          - vpc_subnets
       fail-fast: false
 
     env:
