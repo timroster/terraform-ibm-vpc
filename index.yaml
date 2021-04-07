@@ -57,6 +57,73 @@ versions:
         description: Flag indicating that a public gateway should be created
         default: true
         optional: true
+    version: v1.5.2
+    outputs:
+      - name: name
+        description: The name of the vpc instance
+      - name: id
+        description: The id of the vpc instance
+      - name: subnet_count
+        description: The total number of subnets for the vpc
+      - name: subnet_label_counts
+        description: The number of subnets for each label. e.g. [{label = 'default', count = 2}, {label = 'test', count = 1}]
+      - name: zone_names
+        description: The list of zone names that into which subnets were created
+      - name: subnet_ids
+        description: The list of subnet ids
+      - name: subnets
+        description: List of subnet objects that contain the subnet id and label, e.g. [{label='', id=''}]
+  - platforms: []
+    dependencies:
+      - id: resource_group
+        refs:
+          - source: github.com/cloud-native-toolkit/terraform-ibm-resource-group
+            version: ">= 2.1.0"
+    variables:
+      - name: resource_group_name
+        moduleRef:
+          id: resource_group
+          output: name
+        type: string
+        description: The name of the IBM Cloud resource group where the cluster will be created/can be found.
+      - name: region
+        scope: global
+        type: string
+        description: The IBM Cloud region where the cluster will be/has been installed.
+      - name: name
+        scope: ignore
+        type: string
+        description: The name of the vpc instance
+        default: ""
+        optional: true
+      - name: name_prefix
+        scope: global
+        type: string
+        description: The name of the vpc resource
+        default: ""
+        optional: true
+      - name: ibmcloud_api_key
+        scope: global
+        type: string
+        description: The IBM Cloud api token
+      - name: subnet_count
+        scope: ignore
+        type: number
+        description: (Deprecated) Number of subnets to create
+        default: 0
+        optional: true
+      - name: subnets
+        scope: module
+        type: list(object({
+        description: The labeled subnets that should be created. Each entry in the list represents a different subnet
+        default: []
+        optional: true
+      - name: public_gateway
+        scope: module
+        type: bool
+        description: Flag indicating that a public gateway should be created
+        default: true
+        optional: true
     version: v1.5.1
     outputs:
       - name: name
