@@ -35,10 +35,11 @@ output "subnet_ids" {
 
 output "subnets" {
   value       = [
-    for subnet in ibm_is_subnet.vpc_subnet:
+    for subnet in data.ibm_is_subnet.vpc_subnet:
     {
       id    = subnet.id
-      label = length(var.subnets) > 0 ? var.subnets[index(ibm_is_subnet.vpc_subnet, subnet)].label : "default"
+      zone  = subnet.zone
+      label = length(var.subnets) > 0 ? element(var.subnets, index(data.ibm_is_subnet.vpc_subnet[*].id, subnet.id)).label : "default"
     }
   ]
   depends_on  = [ibm_is_subnet.vpc_subnet]
