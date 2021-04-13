@@ -8,6 +8,43 @@ tags:
 versions:
   - platforms: []
     dependencies:
+      - id: resource-group
+        refs:
+          - source: github.com/cloud-native-toolkit/terraform-ibm-resource-group
+            version: ">= 2.1.0"
+    variables:
+      - name: resource_group_id
+        moduleRef:
+          id: resource-group
+          output: id
+        type: string
+      - name: resource_group_name
+        moduleRef:
+          id: resource-group
+          output: name
+        type: string
+      - name: region
+        scope: global
+        type: string
+      - name: name
+        scope: ignore
+        type: string
+      - name: name_prefix
+        scope: global
+        type: string
+      - name: ibmcloud_api_key
+        scope: global
+        type: string
+    version: v1.7.0
+    outputs:
+      - name: name
+        description: The name of the vpc instance
+      - name: id
+        description: The id of the vpc instance
+      - name: acl_id
+        description: The id of the network acl
+  - platforms: []
+    dependencies:
       - id: resource_group
         refs:
           - source: github.com/cloud-native-toolkit/terraform-ibm-resource-group
