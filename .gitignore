@@ -1,2 +1,7 @@
 .idea/
 *.iml
+
+test/stages/module
+.terraform
+*.tfstate*
+
