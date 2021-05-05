@@ -13,13 +13,6 @@ resource null_resource print_cos_id {
   }
 }
 
-resource "ibm_iam_authorization_policy" "policy" {
-    source_service_name = "is"
-    source_resource_type = "flow-log-collector"
-    target_service_name = "cloud-object-storage"
-    roles = ["Writer"] 
-}
-
 module "dev_cos_bucket" {
   source = "github.com/cloud-native-toolkit/terraform-ibm-object-storage-bucket.git"
 
@@ -27,7 +20,7 @@ module "dev_cos_bucket" {
   cos_instance_id     = module.cos.id
   name_prefix         = var.name_prefix
   ibmcloud_api_key    = var.ibmcloud_api_key
-  name                = "fl-testing-gsi"
+  name                = "fl-testing-gsi2"
   region              = var.region
 }
 
@@ -48,5 +41,5 @@ module "dev_vpc_with_flowlog" {
   name_prefix         = var.name_prefix
   name                = "vpc-with-fl-${module.cos.name}-${length(null_resource.print_bucket)}"
   ibmcloud_api_key    = var.ibmcloud_api_key
-  flow-log-cos-bucket-name = module.dev_cos_bucket.bucket_name
+  flow_log_cos_bucket_name = module.dev_cos_bucket.bucket_name
 }
