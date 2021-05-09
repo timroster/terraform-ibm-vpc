@@ -9,9 +9,8 @@ locals {
   security_group_id = data.ibm_is_vpc.vpc.default_security_group
   acl_id            = data.ibm_is_vpc.vpc.default_network_acl
   crn               = data.ibm_is_vpc.vpc.resource_crn
-  ipv4_cidr_provided = length(var.address_prefixes) >= var.address_prefix_count
+  ipv4_cidr_provided = var.address_prefix_count > 0 && length(var.address_prefixes) >= var.address_prefix_count
   ipv4_cidr_block    = local.ipv4_cidr_provided ? var.address_prefixes : [ for val in range(var.address_prefix_count): "" ]
-  address_prefix_management = local.ipv4_cidr_provided ? "manual" : "auto"
   provision_cidr     = var.provision && local.ipv4_cidr_provided
 }
 
@@ -24,6 +23,23 @@ resource null_resource print_values {
   }
 }
 
+resource ibm_is_vpc vpc {
+  count = var.provision ? 1 : 0
+
+  name                        = local.vpc_name
+  resource_group              = var.resource_group_id
+  address_prefix_management   = local.ipv4_cidr_provided ? "manual" : "auto"
+  default_security_group_name = "${local.vpc_name}-security-group"
+  default_network_acl_name    = "${local.vpc_name}-acl"
+  default_routing_table_name  = "${local.vpc_name}-routing"
+}
+
+data ibm_is_vpc vpc {
+  depends_on = [ibm_is_vpc.vpc]
+
+  name = local.vpc_name
+}
+
 resource ibm_is_vpc_address_prefix cidr_prefix {
   count = local.provision_cidr ? var.address_prefix_count : 0
 
@@ -33,17 +49,6 @@ resource ibm_is_vpc_address_prefix cidr_prefix {
   cidr  = local.ipv4_cidr_block[count.index]
 }
 
-resource ibm_is_vpc vpc {
-  count = var.provision ? 1 : 0
-
-  name                        = local.vpc_name
-  resource_group              = var.resource_group_id
-  address_prefix_management   = local.address_prefix_management
-  default_security_group_name = "${local.vpc_name}-security-group"
-  default_network_acl_name    = "${local.vpc_name}-acl"
-  default_routing_table_name  = "${local.vpc_name}-routing"
-}
-
 # Set the address prefixes as the default.  This will allow us to specify the number of ips required
 # in each subnet, instead of figuring out specific cidrs.
 # Note the "split" function call - this is because the id returned from creating the address
@@ -51,7 +56,7 @@ resource ibm_is_vpc vpc {
 # arguments.  I suspect this is actually a defect in what is returned from ibm_is_vpc_address_prefix
 # and it may one day be fixed and trip up this code.
 resource null_resource post_vpc_address_pfx_default {
-  count = local.provision_cidr ? var.address_prefix_count : 0
+  count = local.provision_cidr ? 1 : 0
   depends_on = [ibm_is_vpc_address_prefix.cidr_prefix]
 
   provisioner "local-exec" {
@@ -62,12 +67,6 @@ resource null_resource post_vpc_address_pfx_default {
       ibmcloud is vpc-address-prefix-update '${local.provision_cidr ? ibm_is_vpc.vpc[0].id : ""}' '${split("/", local.provision_cidr ? ibm_is_vpc_address_prefix.cidr_prefix[2].id : "/")[1]}' --default true ; \
      COMMAND
   }
-}
-
-data ibm_is_vpc vpc {
-  depends_on = [ibm_is_vpc.vpc]
-
-  name = local.vpc_name
 }
 
 resource ibm_is_security_group_rule rule_icmp_ping {
