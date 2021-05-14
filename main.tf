@@ -61,6 +61,15 @@ resource null_resource post_vpc_address_pfx_default {
   }
 }
 
+resource null_resource setup_default_acl {
+  depends_on = [null_resource.post_vpc_address_pfx_default]
+  count = var.provision ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "${path.module}/scripts/setup-default-acl.sh ${data.ibm_is_vpc.vpc.default_network_acl}"
+  }
+}
+
 resource ibm_is_security_group base {
   count = var.provision ? 1 : 0
 
