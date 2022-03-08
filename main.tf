@@ -129,6 +129,7 @@ resource ibm_is_security_group base {
   name = local.base_security_group_name
   vpc  = lookup(local.vpc, "id", "")
   resource_group = local.resource_group_id
+  tags = var.tags
 }
 
 data ibm_is_security_group base {
