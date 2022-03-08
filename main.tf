@@ -39,6 +39,7 @@ resource ibm_is_vpc vpc {
   default_security_group_name = "${local.vpc_name}-default"
   default_network_acl_name    = "${local.vpc_name}-default"
   default_routing_table_name  = "${local.vpc_name}-default"
+  tags                        = var.tags
 }
 
 data ibm_is_vpc vpc {
