@@ -48,12 +48,12 @@ data ibm_is_vpc vpc {
   name = local.vpc_name
 }
 
-resource ibm_resource_tag tag {
+resource ibm_resource_tag sg-tag {
   resource_id = ibm_is_vpc.vpc.default_security_group_crn
   tags        = var.tags
 }
 
-resource ibm_resource_tag tag {
+resource ibm_resource_tag nacl-tag {
   resource_id = ibm_is_vpc.vpc.default_network_acl_crn
   tags        = var.tags
 }
