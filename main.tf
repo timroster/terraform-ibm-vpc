@@ -48,6 +48,16 @@ data ibm_is_vpc vpc {
   name = local.vpc_name
 }
 
+resource ibm_resource_tag tag {
+  resource_id = ibm_is_vpc.vpc.default_security_group_crn
+  tags        = var.tags
+}
+
+resource ibm_resource_tag tag {
+  resource_id = ibm_is_vpc.vpc.default_network_acl_crn
+  tags        = var.tags
+}
+
 resource ibm_is_vpc_address_prefix cidr_prefix {
   count = local.provision_cidr ? var.address_prefix_count : 0
 
