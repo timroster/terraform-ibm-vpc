@@ -49,11 +49,15 @@ data ibm_is_vpc vpc {
 }
 
 resource ibm_resource_tag sg-tag {
+  count = var.provision ? 1 : 0
+  
   resource_id = local.vpc.default_security_group_crn
   tags        = var.tags
 }
 
 resource ibm_resource_tag nacl-tag {
+  count = var.provision ? 1 : 0
+
   resource_id = local.vpc.default_network_acl_crn
   tags        = var.tags
 }
